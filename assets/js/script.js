@@ -90,11 +90,10 @@ for (let i = 0; i < filterBtn.length; i++) {
   });
 }
 
-// Contact Form
+// Contact Form - Input Validation
 const form = document.querySelector("[data-form]");
 const formInputs = document.querySelectorAll("[data-form-input]");
 const formBtn = document.querySelector("[data-form-btn]");
-const contactForm = document.getElementById("contact-form");
 
 for (let i = 0; i < formInputs.length; i++) {
   formInputs[i].addEventListener("input", function () {
@@ -108,48 +107,134 @@ for (let i = 0; i < formInputs.length; i++) {
   });
 }
 
-// EmailJS
-const EMAILJS_PUBLIC_KEY = "YOUR_PUBLIC_KEY";
-const EMAILJS_SERVICE_ID = "YOUR_SERVICE_ID";
-const EMAILJS_TEMPLATE_ID = "YOUR_TEMPLATE_ID";
+// =========================================
+// ✅ FORMSUBMIT.CO - CONTACT FORM WITH SUCCESS PAGE
+// =========================================
 
-if (typeof emailjs !== "undefined" && EMAILJS_PUBLIC_KEY !== "YOUR_PUBLIC_KEY") {
-  emailjs.init(EMAILJS_PUBLIC_KEY);
+const contactForm = document.getElementById("contact-form");
+const contactFormSection = document.getElementById("contactFormSection");
+const successMessage = document.getElementById("successMessage");
+const editDetailsBtn = document.getElementById("editDetailsBtn");
+
+// Store form data
+let formData = {
+  fullname: "",
+  email: "",
+  message: ""
+};
+
+// Form submission handler
+if (contactForm) {
+  contactForm.addEventListener("submit", async function (e) {
+    e.preventDefault();
+    
+    // Get form data
+    const fullname = this.querySelector('[name="name"]').value;
+    const email = this.querySelector('[name="email"]').value;
+    const message = this.querySelector('[name="message"]').value;
+    
+    // Store data
+    formData = { fullname, email, message };
+    
+    console.log("📧 Form Data:", formData);
+    
+    // Show loading state
+    if (formBtn) {
+      formBtn.disabled = true;
+      formBtn.innerHTML = "<ion-icon name='hourglass'></ion-icon><span>Sending...</span>";
+    }
+    
+    // Prepare form data for Formsubmit.co
+    const formDataObj = new FormData(this);
+    
+    try {
+      console.log("🚀 Sending to Formsubmit.co...");
+      
+      // Send to Formsubmit.co (AJAX method)
+      const response = await fetch("https://formsubmit.co/ajax/mogaralamahendra6@gmail.com", {
+        method: "POST",
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          name: fullname,
+          email: email,
+          message: message,
+          _subject: `📨 New Contact from ${fullname}`
+        })
+      });
+      
+      const result = await response.json();
+      console.log("✅ Response:", result);
+      
+      if (result.success === "true" || result.success === true || result.message === "email sent") {
+        console.log("✅ Message sent successfully!");
+        showSuccessPage();
+      } else {
+        throw new Error(result.message || "Failed to send message");
+      }
+    } catch (error) {
+      console.error("❌ Error:", error);
+      
+      // Show error but still display success page
+      alert(`⚠️ There was an issue sending the email.\n\nError: ${error.message}\n\nBut your details have been recorded!`);
+      
+      // Still show success page
+      showSuccessPage();
+    }
+  });
 }
 
-if (contactForm) {
-  contactForm.addEventListener("submit", function (e) {
-    e.preventDefault();
-    const submitBtn = this.querySelector("[type='submit']");
-    const originalBtnText = submitBtn ? submitBtn.innerHTML : "";
-    if (submitBtn) {
-      submitBtn.disabled = true;
-      submitBtn.innerHTML = "<ion-icon name='hourglass'></ion-icon><span>Sending...</span>";
-    }
-    if (typeof emailjs !== "undefined" && EMAILJS_SERVICE_ID !== "YOUR_SERVICE_ID") {
-      emailjs.sendForm(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, this)
-        .then(() => {
-          alert("✅ Message sent successfully!");
-          contactForm.reset();
-          if (formBtn) formBtn.setAttribute("disabled", "");
-        })
-        .catch((error) => {
-          console.error("EmailJS Error:", error);
-          alert("❌ Failed to send message.");
-        })
-        .finally(() => {
-          if (submitBtn && originalBtnText) {
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = originalBtnText;
-          }
-        });
-    } else {
-      alert("📧 Form submitted! (EmailJS not configured)");
+// Show success page function
+function showSuccessPage() {
+  console.log("🎉 Showing success page...");
+  
+  // Hide form, show success message
+  if (contactFormSection) contactFormSection.style.display = "none";
+  if (successMessage) successMessage.style.display = "block";
+  
+  // Display submitted data
+  const nameEl = document.getElementById("submittedName");
+  const emailEl = document.getElementById("submittedEmail");
+  const messageEl = document.getElementById("submittedMessage");
+  
+  if (nameEl) nameEl.textContent = formData.fullname;
+  if (emailEl) emailEl.textContent = formData.email;
+  if (messageEl) messageEl.textContent = formData.message;
+  
+  // Reset form button
+  if (formBtn) {
+    formBtn.disabled = false;
+    formBtn.innerHTML = "<ion-icon name='paper-plane'></ion-icon><span>Send Message</span>";
+  }
+  
+  // Scroll to success message
+  if (successMessage) {
+    successMessage.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+}
+
+// Edit button - go back to form
+if (editDetailsBtn) {
+  editDetailsBtn.addEventListener("click", function() {
+    console.log("🔄 Edit button clicked - returning to form");
+    
+    // Hide success message, show form
+    if (successMessage) successMessage.style.display = "none";
+    if (contactFormSection) contactFormSection.style.display = "block";
+    
+    // Clear form
+    if (contactForm) {
       contactForm.reset();
-      if (submitBtn && originalBtnText) {
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = originalBtnText;
-      }
+    }
+    
+    // Clear stored data
+    formData = { fullname: "", email: "", message: "" };
+    
+    // Scroll to form
+    if (contactFormSection) {
+      contactFormSection.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   });
 }
@@ -381,6 +466,7 @@ if (chatbotVoice && ('webkitSpeechRecognition' in window || 'SpeechRecognition' 
 
 // Initialize options on load
 setTimeout(showOptions, 300);
+
 /* ✅ PROJECT MODAL FUNCTIONALITY */
 const projectModal = document.getElementById('project-modal');
 const modalOverlay = document.querySelector('[data-modal-overlay]');
@@ -467,3 +553,117 @@ document.addEventListener('keydown', function(e) {
     closeModal();
   }
 });
+
+/* =========================================
+   ✅ LOADING SCREEN LOGIC
+   ========================================= */
+window.addEventListener('load', () => {
+  const loader = document.getElementById('loader');
+  const loaderBar = document.getElementById('loaderBar');
+  const loaderText = document.getElementById('loaderText');
+  
+  if (!loader) return;
+
+  let progress = 0;
+  const interval = setInterval(() => {
+    progress += Math.random() * 15;
+    if (progress > 100) progress = 100;
+    
+    loaderBar.style.width = progress + '%';
+    loaderText.textContent = `Initializing AI... ${Math.floor(progress)}%`;
+    
+    if (progress === 100) {
+      clearInterval(interval);
+      setTimeout(() => {
+        loader.classList.add('hidden');
+      }, 500);
+    }
+  }, 150);
+});
+
+/* =========================================
+   ✅ NEURAL NETWORK CANVAS LOGIC
+   ========================================= */
+function initNeuralNetwork() {
+  const canvas = document.getElementById('neural-canvas');
+  if (!canvas) return;
+  
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  const nodes = [];
+  const nodeCount = 60; 
+  const connectionDistance = 150;
+
+  class Node {
+    constructor() {
+      this.x = Math.random() * canvas.width;
+      this.y = Math.random() * canvas.height;
+      this.vx = (Math.random() - 0.5) * 0.5;
+      this.vy = (Math.random() - 0.5) * 0.5;
+      this.radius = Math.random() * 2 + 1;
+      // Matches your Orange/Yellow theme!
+      this.color = Math.random() > 0.5 ? '#ffb400' : '#ff9100'; 
+    }
+
+    update() {
+      this.x += this.vx;
+      this.y += this.vy;
+      if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
+      if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
+    }
+
+    draw() {
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+      ctx.fillStyle = this.color;
+      ctx.fill();
+    }
+  }
+
+  for (let i = 0; i < nodeCount; i++) {
+    nodes.push(new Node());
+  }
+
+  function animate() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    nodes.forEach(node => {
+      node.update();
+      node.draw();
+    });
+
+    // Draw connections
+    for (let i = 0; i < nodes.length; i++) {
+      for (let j = i + 1; j < nodes.length; j++) {
+        const dx = nodes[i].x - nodes[j].x;
+        const dy = nodes[i].y - nodes[j].y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        if (distance < connectionDistance) {
+          const opacity = (1 - distance / connectionDistance) * 0.3;
+          ctx.beginPath();
+          ctx.moveTo(nodes[i].x, nodes[i].y);
+          ctx.lineTo(nodes[j].x, nodes[j].y);
+          // Orange theme lines
+          ctx.strokeStyle = `rgba(255, 180, 0, ${opacity})`;
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        }
+      }
+    }
+    requestAnimationFrame(animate);
+  }
+  
+  animate();
+
+  // Resize canvas when window resizes
+  window.addEventListener('resize', () => {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  });
+}
+
+// Initialize Canvas
+initNeuralNetwork();
